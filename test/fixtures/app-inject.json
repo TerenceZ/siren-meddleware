@@ -1,0 +1,10 @@
+{
+    "app-inject-middleware": {
+        "enabled": true,
+        "priority": 10,
+        "module": {
+            "name": "./fixtures/middleware/app-inject",
+            "arguments": [0, "__app", 1]
+        }
+    }
+}

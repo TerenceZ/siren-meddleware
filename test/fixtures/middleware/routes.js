@@ -3,31 +3,31 @@
 
 
 exports.routeA = function () {
-    return function routeA(req, res, next) {
-        res.locals.routeA = true;
-        next();
+    return function *routeA(next) {
+        this.state.routeA = true;
+        yield *next;
     };
 };
 
 
 exports.routeB = function () {
-    return function routeB(req, res, next) {
-        res.locals.routeB = true;
-        next();
+    return function *routeB(next) {
+        this.state.routeB = true;
+        yield *next;
     };
 };
 
 
 exports.routeC = function () {
-    return function routeC(req, res, next) {
-        res.locals.routeC = true;
-        next();
+    return function *routeC(next) {
+        this.state.routeC = true;
+        yield *next;
     };
 };
 
 exports.routeD = function () {
-    return function routeC(req, res, next) {
-        res.locals.routeD = true;
-        next();
+    return function *routeD(next) {
+        this.state.routeD = true;
+        yield *next;
     };
 };

@@ -13,48 +13,47 @@
  │  See the License for the specific language governing permissions and       │
  │  limitations under the License.                                            │
  \*───────────────────────────────────────────────────────────────────────────*/
-'use strict';
+"use strict";
 
-var path = require('path');
-var caller = require('caller');
-var express = require('express');
-var thing = require('core-util-is');
-var debug = require('debuglog')('meddleware');
-var RQ = require('./lib/rq');
-var util = require('./lib/util');
+var co = require("co");
+var path = require("path");
+var thing = require("core-util-is");
+var caller = require("caller");
+var util = require("./lib/util");
+var mount = require("siren-mount");
+var debug = require("debuglog")("siren/meddleware");
 
 
 /**
  * Creates a middleware resolver based on the provided basedir.
  * @param basedir the directory against which to resolve relative paths.
+ * @param app the koa application.
  * @returns {Function} a the implementation that converts a given spec to a middleware function.
  */
-function resolvery(basedir) {
-    return function resolve(spec, name) {
-        var fns, fn;
+function resolvery(basedir, app) {
 
-        spec.name = spec.name || name;
+  return function resolve(spec, name) {
 
-        if (spec.parallel) {
-            fns = util.mapValues(spec.parallel, resolve);
-            fn = middleware(RQ.parallel, fns);
+    spec.name = spec.name || name;
 
-        } else if (spec.race) {
-            fns = util.mapValues(spec.race, resolve);
-            fn = middleware(RQ.race, fns);
+    if (spec.parallel) {
+      return parallel(util.mapValues(spec.parallel, resolve));
+    }
 
-        } else if (spec.fallback) {
-            fns = util.mapValues(spec.fallback, util.nameObject);
-            fns = fns.filter(thing.isObject).sort(compare);
-            fns = util.mapValues(fns, resolve);
-            fn = middleware(RQ.fallback, fns);
+    if (spec.race) {
+      return race(util.mapValues(spec.race, resolve));
+    }
 
-        } else {
-            fn = resolveImpl(basedir, spec.module);
-        }
+    if (spec.fallback) {
+      let generators = util.mapValues(spec.fallback, util.nameObject)
+        .filter(thing.isObject)
+        .sort(compare);
 
-        return fn;
-    };
+      return fallback(util.mapValues(generators, resolve));
+    }
+
+    return resolveImpl(basedir, spec.module, app);
+  };
 }
 
 
@@ -62,73 +61,131 @@ function resolvery(basedir) {
  * Attempts to locate a node module and get the specified middleware implementation.
  * @param root The root directory to resolve to if file is a relative path.
  * @param config The configuration object or string describing the module and option factory method.
+ * @param app The koa application.
  * @returns {Function} The middleware implementation, if located.
  */
-function resolveImpl(root, config) {
-    var modulePath, module, factory, args;
+function resolveImpl(root, options, app) {
 
-    if (typeof config === 'string') {
-        return resolveImpl(root, { name: config });
-    }
+  if (typeof options === "string") {
+    options = {
+      name: options
+    };
+  }
 
-    if (!config || !config.name) {
-        throw new TypeError('Module not defined.');
-    }
+  if (!options || !options.name) {
+    throw new TypeError("Module not defined");
+  }
 
-    debug('loading module', config.name);
+  debug("loading module", options.name);
 
-    // Check the initial module, then try to resolve it to an absolute path and check again.
-    modulePath = util.tryResolve(config.name) || util.tryResolve(path.resolve(root, config.name));
+  var modulePath = util.tryResolve(options.name) || util.tryResolve(path.resolve(root, options.name));
+  var module = require(modulePath || options.name);
 
-    // If modulePath was not resolved lookup with config.name for meaningful error message.
-    module = require(modulePath || config.name);
-
-    // First, look for a factory method
-    factory = module[config.method];
+  var factory = module;
+  if (options.method !== undefined) {
+    factory = module[options.method];
     if (!thing.isFunction(factory)) {
-        // Then, check if the module itself is a factory
-        factory = module;
-        if (!thing.isFunction(factory)) {
-            throw new Error('Unable to locate middleware in ' + config.name);
-        }
+      factory = module;
     }
+  }
 
-    args = thing.isArray(config['arguments']) ? config['arguments'] : [];
-    return factory.apply(module, args);
+  if (!thing.isFunction(factory)) {
+    throw new Error("Unable to locate middleware in " + options.name);
+  }
+
+  var args = thing.isArray(options["arguments"]) ? options["arguments"] : [];
+  var appPlaceholder = args.indexOf("__app");
+
+  if (appPlaceholder >= 0) {
+    args[appPlaceholder] = app;
+  }
+  return factory.apply(module, args);
 }
 
-
+/**
+ * The empty iterator.
+ */
+var noop = (function *() { })();
 
 /**
- * Middleware Factory
- * @param requestory
- * @param fns
+ * Run all middleware in parallel, and go to next until all done.
+ * @param fns the array of middleware
  * @returns {Function}
  */
-function middleware(requestory, fns) {
-    var rq = requestory(fns.map(taskery));
-    return function composite(req, res, next) {
-        function complete(success, failure) {
-            next(failure);
+function parallel(fns) {
+
+  return function *parallelMiddleware(next) {
+    
+    var ctx = this;
+
+    yield Promise.all(fns.map(function (fn) {
+
+      return co(function *() {
+
+        yield *fn.call(ctx, noop);
+      });
+    }));
+
+    yield *next;
+  };
+}
+
+/**
+ * Race all middleware in parallel, and go to next as long as one win.
+ * @param fns the array of middleware
+ * @returns {Function}
+ */
+function race(fns) {
+
+  return function *raceMiddleware(next) {
+
+    var ctx = this;
+
+    yield Promise.race(fns.map(function (fn) {
+
+      return co(function *() {
+
+        yield *fn.call(ctx, noop);
+      });
+    }));
+
+    yield *next;
+  };
+}
+
+/**
+ * Run middleware in sequence as long as the running middleware throws error.
+ * @param fns the array of middleware
+ * @returns {Function}
+ */
+function fallback(fns) {
+
+  return function *fallbackMiddleware(next) {
+
+    var ctx = this;
+    var index = -1;
+    var length = fns.length;
+
+    yield (function retry() {
+
+      return co(function *() {
+
+        if (++index >= length) {
+          return ctx.throw("Unable to run any middleware successfully");
         }
-        rq(complete, { req: req, res: res });
-    };
+
+        try {
+          yield *fns[index].call(ctx, noop);
+
+        } catch (e) {
+          yield retry();
+        }
+      });
+    })();
+
+    yield *next;
+  };
 }
-
-
-/**
- * Task Factory
- * @param fn
- * @returns {Function}
- */
-function taskery(fn) {
-    return function requestor(requestion, value) {
-        fn(value.req, value.res, function (err) {
-            requestion(null, err);
-        });
-    };
-}
-
 
 /**
  * Comparator for sorting middleware by priority
@@ -137,61 +194,64 @@ function taskery(fn) {
  * @returns {number}
  */
 function compare(a, b) {
-    var ap, bp;
-    ap = typeof a.priority === 'number' ? a.priority : Number.MIN_VALUE;
-    bp = typeof b.priority === 'number' ? b.priority : Number.MIN_VALUE;
-    return ap - bp;
+
+  return (typeof a.priority ==="number" ? a.priority : Number.MIN_VALUE) -
+    (typeof b.priority === "number" ? b.priority : Number.MIN_VALUE);
 }
 
+/**
+ * Read the `options` to load and config middleware and used in `app`.
+ * @param app koa application
+ * @param options
+ * @returns {Application} app
+ */
+module.exports = function meddleware(app, options) {
 
-module.exports = function meddleware(settings) {
-    var basedir, app;
+  // The `require`-ing module (caller) is considered the `basedir`
+  // against which relative file paths will be resolved.
+  // Don't like it? Then pass absolute module paths. :D
+  var basedir = path.dirname(caller());
+  var resolve = resolvery(basedir, app);
 
-    // The `require`-ing module (caller) is considered the `basedir`
-    // against which relative file paths will be resolved.
-    // Don't like it? Then pass absolute module paths. :D
-    basedir = path.dirname(caller());
+  util.mapValues(options, util.nameObject)
+    .filter(thing.isObject)
+    .sort(compare)
+    .forEach(function register(spec) {
 
-    function onmount(parent) {
-        var resolve, mountpath;
+      if (!spec.enabled && "enabled" in spec) {
+        return;
+      }
 
-        // Remove the sacrificial express app.
-        parent._router.stack.pop();
+      var fn = resolve(spec, spec.name);
 
-        resolve = resolvery(basedir);
-        mountpath = app.mountpath;
+      var route = "/";
+      var isstr = typeof spec.route === "string";
+      if (isstr) {
+        if (spec.route[0] === "/") {
+          route = spec.route;
+        } else {
+          route = "/" + spec.route;
+        }
+      }
 
-        util
-            .mapValues(settings, util.nameObject)
-            .filter(thing.isObject)
-            .sort(compare)
-            .forEach(function register(spec) {
-                var fn, eventargs, route;
+      debug("registering", spec.name, "middleware");
 
-                if (!spec.enabled && 'enabled' in spec) {
-                    return;
-                }
+      var event = { app: app, config: spec };
+      app.emit("middleware:before", event);
+      app.emit("middleware:before:" + spec.name, event);
 
-                fn = resolve(spec, spec.name);
-                eventargs = { app: parent, config: spec };
+      app.use(
+        mount(
+          !isstr && (spec.route instanceof RegExp) ?
+            spec.route :
+            route,
+          fn
+        )
+      );
 
-                route = thing.isRegExp(spec.route) ? spec.route : mountpath;
-                if (thing.isString(spec.route)) {
-                    route += route[route.length - 1] !== '/' ? '/' : '';
-                    route += spec.route[0] === '/' ? spec.route.slice(1) : spec.route;
-                }
+      app.emit("middleware:after", event);
+      app.emit("middleware:after:" + spec.name, event);
+    });
 
-                debug('registering', spec.name, 'middleware');
-
-                parent.emit('middleware:before', eventargs);
-                parent.emit('middleware:before:' + spec.name, eventargs);
-                parent.use(route, fn);
-                parent.emit('middleware:after:' + spec.name, eventargs);
-                parent.emit('middleware:after', eventargs);
-            });
-    }
-
-    app = express();
-    app.once('mount', onmount);
-    return app;
+  return app;
 };

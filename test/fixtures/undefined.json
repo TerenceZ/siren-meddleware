@@ -3,43 +3,20 @@
         "enabled": true,
         "priority": 10,
         "module": {
-            "name": "serve-favicon",
+            "name": "koa-favicon",
             "arguments": [ "path:./fixtures/favicon.ico" ]
         }
     },
 
-    "static": {
-        "enabled": true,
-        "priority": 30,
-        "module": {
-            "name": "serve-static",
-            "arguments": [ "path:./.build" ]
-        }
-    },
+    "static": null,
 
     "logger": null,
 
-    "json": {
+    "body": {
         "enabled": true,
         "priority": 60,
         "module": {
-            "name": "body-parser",
-            "method": "json"
+            "name": "koa-body-parser"
         }
-    },
-
-    "urlencoded": {
-        "enabled": true,
-        "priority": 70,
-        "module": {
-            "name": "body-parser",
-            "method": "urlencoded",
-            "arguments": [{ "extended": true }]
-        }
-    },
-
-    "cookieParser": null,
-
-    "session": null
-
+    }
 }

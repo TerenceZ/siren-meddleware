@@ -2,15 +2,12 @@
 
 module.exports = {
     thisMustBeingFoundByMeddleware: function () {
-        return function (req, res, next) {
-            res.locals.selfWasCalled = true;
-            next(null);
+        return function *(next) {
+            this.body = "The method was called with a scope";
+            yield *next;
         };
     },
     run: function () {
-        for (var p in this) {
-            console.log(p);
-        }
         return this.thisMustBeingFoundByMeddleware();
     }
 };

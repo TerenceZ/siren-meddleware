@@ -1,0 +1,10 @@
+{
+    "non-function-middleware": {
+        "enabled": true,
+        "priority": 10,
+        "module": {
+            "name": "./fixtures/middleware/non-function",
+            "method": "object"
+        }
+    }
+}

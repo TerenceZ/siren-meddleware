@@ -2,7 +2,7 @@
 
 
 module.exports = function () {
-    return function demo(req, res, next) {
-        next();
+    return function *demo(next) {
+        yield *next;
     };
 };
