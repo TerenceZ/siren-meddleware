@@ -1,13 +1,7 @@
 {
-<<<<<<< HEAD
-  "name": "meddleware",
-  "version": "3.0.0",
-  "description": "Configuration-based middleware registration for express.",
-=======
   "name": "siren-meddleware",
   "version": "1.0.0",
   "description": "Configuration-based middleware registration for koa.",
->>>>>>> v2.0.0-release
   "main": "index.js",
   "scripts": {
     "test": "NODE_ENV=test mocha --harmony --require should --reporter spec",
