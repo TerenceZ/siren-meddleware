@@ -2,7 +2,7 @@
     "favicon": {
         "priority": 10,
         "module": {
-            "name": "serve-favicon",
+            "name": "koa-favicon",
             "arguments": [ "path:./fixtures/favicon.ico" ]
         }
     },
@@ -11,7 +11,7 @@
         "enabled": false,
         "priority": 30,
         "module": {
-            "name": "serve-static",
+            "name": "koa-static",
             "arguments": [ "path:./.build" ]
         }
     },
@@ -20,37 +20,15 @@
         "enabled": false,
         "priority": 50,
         "module": {
-            "name": "morgan",
-            "arguments": [ "combined" ]
+            "name": "koa-logger"
         }
     },
 
-    "json": {
-        "enabled": false,
+    "body": {
+        "enabled": true,
         "priority": 60,
         "module": {
-            "name": "body-parser",
-            "method": "json"
-        }
-    },
-
-    "urlencoded": {
-        "enabled": false,
-        "priority": 70,
-        "module": {
-            "name": "body-parser",
-            "method": "urlencoded",
-            "arguments": [{ "extended": true }]
-        }
-    },
-
-    "cookieParser": {
-        "enabled": false,
-        "priority": 90,
-        "module": {
-            "name": "cookie-parser",
-            "arguments": [ "keyboard cat" ]
+            "name": "koa-body-parser"
         }
     }
-
 }

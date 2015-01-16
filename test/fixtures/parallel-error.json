@@ -2,29 +2,36 @@
     "simultaneous": {
         "enabled": true,
         "priority": 50,
-        "race": {
+        "parallel": {
             "middlewareA": {
                 "enabled": true,
-                "race": {
+                "parallel": {
                     "middlewareA": {
                         "enabled": true,
                         "module": {
-                            "name": "./fixtures/middleware/race",
+                            "name": "./fixtures/middleware/parallel",
                             "method": "middlewareA"
                         }
                     },
                     "middlewareB": {
                         "enabled": true,
                         "module": {
-                            "name": "./fixtures/middleware/race",
+                            "name": "./fixtures/middleware/parallel",
                             "method": "middlewareB"
                         }
                     },
                     "middlewareC": {
                         "enabled": true,
                         "module": {
-                            "name": "./fixtures/middleware/race",
+                            "name": "./fixtures/middleware/parallel",
                             "method": "middlewareC"
+                        }
+                    },
+                    "middlewareD": {
+                        "enabled": true,
+                        "module": {
+                            "name": "./fixtures/middleware/parallel",
+                            "method": "middlewareD"
                         }
                     }
                 }
@@ -32,14 +39,14 @@
             "middlewareB": {
                 "enabled": true,
                 "module": {
-                    "name": "./fixtures/middleware/race",
+                    "name": "./fixtures/middleware/parallel",
                     "method": "middlewareB"
                 }
             },
             "middlewareC": {
                 "enabled": true,
                 "module": {
-                    "name": "./fixtures/middleware/race",
+                    "name": "./fixtures/middleware/parallel",
                     "method": "middlewareC"
                 }
             }

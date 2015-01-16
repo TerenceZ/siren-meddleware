@@ -26,6 +26,13 @@
                             "name": "./fixtures/middleware/race",
                             "method": "middlewareC"
                         }
+                    },
+                    "middlewareD": {
+                        "enabled": true,
+                        "module": {
+                            "name": "./fixtures/middleware/race",
+                            "method": "middlewareD"
+                        }
                     }
                 }
             },

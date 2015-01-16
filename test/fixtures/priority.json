@@ -1,5 +1,6 @@
 {
     "middlewareA": {
+        "priority": 60,
         "enabled": true,
         "module": {
             "name": "path:./fixtures/middleware/middlewareA"
@@ -15,6 +16,7 @@
     },
 
     "middlewareC": {
+        "priority": 100,
         "enabled": true,
         "module": {
             "name": "path:./fixtures/middleware/middlewareC"

@@ -1,22 +1,29 @@
 {
+<<<<<<< HEAD
   "name": "meddleware",
   "version": "3.0.0",
   "description": "Configuration-based middleware registration for express.",
+=======
+  "name": "siren-meddleware",
+  "version": "1.0.0",
+  "description": "Configuration-based middleware registration for koa.",
+>>>>>>> v2.0.0-release
   "main": "index.js",
-  "directories": {
-    "test": "test"
-  },
   "scripts": {
-    "test": "tape test/*.js",
-    "cover": "istanbul cover tape -- test/*.js",
-    "lint": "jshint -c .jshintrc index.js",
-    "dryrun": "(TARBALL=`npm pack` ; tar ztvf $TARBALL ; rm -f $TARBALL)"
+    "test": "NODE_ENV=test mocha --harmony --require should --reporter spec",
+    "test-win": "set NODE_ENV=test & mocha --harmony --require should --reporter spec",
+    "test-cov": "NODE_ENV=test node --harmony ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --require should",
+    "test-cov-win": "set NODE_ENV=test & node --harmony ./node_modules/istanbul-harmony/lib/cli cover ./node_modules/mocha/bin/_mocha -- --require should",
+    "test-travis": "NODE_ENV=test node --harmony ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha --report lcovonly -- --require should"
   },
   "keywords": [
-    "express",
+    "koa",
     "middleware"
   ],
-  "author": "Erik Toth <ertoth@paypal.com>",
+  "author": [
+    "Erik Toth <ertoth@paypal.com>",
+    "TerenceZ <texvnars@gmail.com>"
+  ],
   "licenses": [
     {
       "type": "Apache 2.0",
@@ -24,31 +31,28 @@
     }
   ],
   "devDependencies": {
-    "body-parser": "^1.0.2",
-    "cookie-parser": "^1.0.1",
-    "express": "^4.6.1",
-    "istanbul": "^0.2.7",
-    "jshint": "^2.5.0",
-    "morgan": "^1.0.0",
-    "serve-favicon": "^2.0.1",
-    "serve-static": "^1.0.4",
+    "istanbul-harmony": "^0.3.1",
+    "koa": "^0.14.0",
+    "koa-body-parser": "^1.1.0",
+    "koa-favicon": "^1.2.0",
+    "koa-logger": "^1.2.2",
+    "koa-static": "^1.4.8",
+    "mocha": "^2.1.0",
     "shortstop": "^1.0.1",
     "shortstop-handlers": "^1.0.0",
     "shortstop-regex": "0.0.1",
-    "supertest": "^0.11.0",
-    "tape": "^2.12.3"
+    "should": "^4.4.2",
+    "supertest": "^0.15.0"
   },
   "dependencies": {
-    "caller": "0.0.1",
-    "debuglog": "0.0.4",
-    "core-util-is": "^1.0.1"
+    "caller": "^1.0.0",
+    "co": "^4.1.0",
+    "core-util-is": "^1.0.1",
+    "debuglog": "^1.0.1",
+    "siren-mount": "^1.0.0"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/krakenjs/meddleware.git"
-  },
-  "bugs": {
-    "url": "https://github.com/krakenjs/meddleware/issues"
-  },
-  "homepage": "https://github.com/krakenjs/meddleware"
+    "url": "git://github.com/TerenceZ/siren-meddleware.git"
+  }
 }

@@ -2,28 +2,24 @@
     "simultaneous": {
         "enabled": true,
         "priority": 50,
-        "race": {
+        "fallback": {
             "middlewareA": {
                 "enabled": true,
-                "race": {
+                "priority": 10,
+                "fallback": {
                     "middlewareA": {
                         "enabled": true,
+                        "priority": 20,
                         "module": {
-                            "name": "./fixtures/middleware/race",
+                            "name": "./fixtures/middleware/fallback",
                             "method": "middlewareA"
-                        }
-                    },
-                    "middlewareB": {
-                        "enabled": true,
-                        "module": {
-                            "name": "./fixtures/middleware/race",
-                            "method": "middlewareB"
                         }
                     },
                     "middlewareC": {
                         "enabled": true,
+                        "priority": 10,
                         "module": {
-                            "name": "./fixtures/middleware/race",
+                            "name": "./fixtures/middleware/fallback",
                             "method": "middlewareC"
                         }
                     }
@@ -31,15 +27,25 @@
             },
             "middlewareB": {
                 "enabled": true,
+                "priority": 20,
                 "module": {
-                    "name": "./fixtures/middleware/race",
+                    "name": "./fixtures/middleware/fallback",
                     "method": "middlewareB"
+                }
+            },
+            "middlewareE": {
+                "enabled": true,
+                "priority": 50,
+                "module": {
+                    "name": "./fixtures/middleware/fallback",
+                    "method": "middlewareE"
                 }
             },
             "middlewareC": {
                 "enabled": true,
+                "priority": 30,
                 "module": {
-                    "name": "./fixtures/middleware/race",
+                    "name": "./fixtures/middleware/fallback",
                     "method": "middlewareC"
                 }
             }
